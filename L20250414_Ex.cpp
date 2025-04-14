@@ -20,7 +20,7 @@ struct MapInfo
 };
 
 void ClearMap(std::string* Map, MapInfo* MapData);
-std::string* Initialized(PlayerInfo* PlayerData, MapInfo* MapData);
+void Initialized(PlayerInfo* PlayerData, MapInfo* MapData, std::string** Map);
 char Input();
 bool ChechDoMove(int X, int Y, std::string* Map);
 bool Move(PlayerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX, int MoveY);
@@ -35,7 +35,7 @@ int main()
 	std::string* Map = nullptr;
 	bool IsRunning = true;
 
-	Map = Initialized(&PlayerData, &MapData);
+	Initialized(&PlayerData, &MapData, &Map);
 
 	while (IsRunning)
 	{
@@ -46,7 +46,7 @@ int main()
 		{
 			IsRunning = Exit;
 		}
-		Render(&PlayerData, Map,&MapData);
+		Render(&PlayerData, Map, &MapData);
 	}
 	delete[] Map;
 }
@@ -58,7 +58,7 @@ void ClearMap(std::string* Map, MapInfo* MapData)
 		std::string MapLine = "";
 		for (int X = 0; X < MapData->Width; X++)
 		{
-			if (X == 0 || Y == 0 || X == (MapData->Width-1) || X == (MapData->Heigh - 1))
+			if (X == 0 || Y == 0 || X == (MapData->Width - 1) || X == (MapData->Heigh - 1))
 			{
 				MapLine += "*";
 			}
@@ -71,7 +71,7 @@ void ClearMap(std::string* Map, MapInfo* MapData)
 	}
 }
 
-std::string* Initialized(PlayerInfo* PlayerData, MapInfo* MapData)
+void Initialized(PlayerInfo* PlayerData, MapInfo* MapData, std::string** Map)
 {
 	PlayerData->X = 5;
 	PlayerData->Y = 5;
@@ -82,8 +82,8 @@ std::string* Initialized(PlayerInfo* PlayerData, MapInfo* MapData)
 	MapData->WallShape = '*';
 	MapData->GroundShape = ' ';
 	std::string* NewMap = new std::string[MapData->Width];
-	ClearMap(NewMap,MapData);
-	return NewMap;
+	ClearMap(NewMap, MapData);
+	*Map = NewMap;
 }
 
 char Input()
@@ -102,11 +102,11 @@ bool ChechDoMove(int X, int Y, std::string* Map)
 	return (Map[Y][X] != '*');
 }
 
-bool Move(PlayerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX=0, int MoveY=0)
+bool Move(PlayerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX = 0, int MoveY = 0)
 {
 	int X = Player->X + MoveX;
 	int Y = Player->Y + MoveY;
-	if (X > MapData->Width-1 || Y > MapData->Heigh-1 || X < 0 || Y < 0)
+	if (X > MapData->Width - 1 || Y > MapData->Heigh - 1 || X < 0 || Y < 0)
 		return false;
 
 	if (ChechDoMove(X, Y, Map))
@@ -146,7 +146,7 @@ bool Tick(char Input, PlayerInfo* PlayerData, MapInfo* MapData, std::string* Map
 
 void Render(PlayerInfo* PlayerData, std::string* Map, MapInfo* MapData)
 {
-	ClearMap(Map,MapData);
+	ClearMap(Map, MapData);
 	Map[PlayerData->Y][PlayerData->X] = PlayerData->Shape;
 	for (int Y = 0; Y < MapData->Heigh; Y++)
 	{
