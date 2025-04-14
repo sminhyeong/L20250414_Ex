@@ -39,6 +39,7 @@ int main()
 
 	while (IsRunning)
 	{
+		//system("cls");
 		char key = Input();
 		bool Exit = Tick(key, &PlayerData, &MapData, Map);
 		if (IsRunning != Exit)
@@ -105,13 +106,13 @@ bool Move(PlayerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX=0, i
 {
 	int X = Player->X + MoveX;
 	int Y = Player->Y + MoveY;
-	if (X > MapData->Width || Y > MapData->Heigh)
+	if (X > MapData->Width-1 || Y > MapData->Heigh-1 || X < 0 || Y < 0)
 		return false;
 
 	if (ChechDoMove(X, Y, Map))
 	{
-		Player->X += MoveX;
-		Player->Y += MoveY;
+		Player->X = Player->X + MoveX;
+		Player->Y = Player->Y + MoveY;
 	}
 	return true;
 }
@@ -126,8 +127,8 @@ bool Tick(char Input, PlayerInfo* PlayerData, MapInfo* MapData, std::string* Map
 		Move(PlayerData, MapData, Map, 0, -1);
 		break;
 	case 'A':
-		break;
 		Move(PlayerData, MapData, Map, -1, 0);
+		break;
 	case 'S':
 		Move(PlayerData, MapData, Map, 0, 1);
 		break;
