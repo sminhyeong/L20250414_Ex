@@ -3,8 +3,17 @@
 
 #include <iostream>
 #include <conio.h>
+#include <windows.h>
 
-struct PlayerInfo
+enum GameMode
+{
+	Start = 0,
+	Do,
+	Exit,
+	Lose,
+	Win
+};
+struct CharacerInfo
 {
 	int X;
 	int Y;
@@ -18,38 +27,50 @@ struct MapInfo
 	char WallShape;
 	char GroundShape;
 };
-
 void ClearMap(std::string* Map, MapInfo* MapData);
-void Initialized(PlayerInfo* PlayerData, MapInfo* MapData, std::string** Map);
+void Initialized(CharacerInfo* PlayerData, CharacerInfo* MonsterData, MapInfo* MapData, std::string** Map);
 char Input();
-bool ChechDoMove(int X, int Y, std::string* Map);
-bool Move(PlayerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX, int MoveY);
-bool Tick(char Input, PlayerInfo* PlayerData, MapInfo* MapData, std::string* Map);
-void Render(PlayerInfo* PlayerDatas, std::string* Map, MapInfo* MapData);
+bool PredictMove(int X, int Y, std::string* Map);
+bool Move(CharacerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX, int MoveY);
+void MonsterMove(CharacerInfo* MonsterData, MapInfo* MapData, std::string* Map, int MoveX, int MoveY);
+GameMode Tick(char Input, CharacerInfo* PlayerData, CharacerInfo* MonsterData, MapInfo* MapData, std::string* Map);
+void Render(CharacerInfo* PlayerDatas, CharacerInfo* MonsterData, std::string* Map, MapInfo* MapData);
+
+void GotoXY(int X, int Y)
+{
+	COORD Cur;
+	Cur.X = X;
+	Cur.Y = Y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Cur);
+}
 
 
 int main()
 {
-	PlayerInfo *PlayerData = new PlayerInfo();
+	CharacerInfo* PlayerData = new CharacerInfo();
+	CharacerInfo*MonsterData = new CharacerInfo();
 	MapInfo *MapData = new MapInfo();
 	std::string* Map = nullptr;
 	bool IsRunning = true;
 
-	Initialized(PlayerData, MapData, &Map);
-
+	Initialized(PlayerData, MonsterData, MapData, &Map);
+	
 	while (IsRunning)
 	{
-		//system("cls");
 		char key = Input();
-		bool Exit = Tick(key, PlayerData, MapData, Map);
-		if (IsRunning != Exit)
+		GameMode Exit = Tick(key, PlayerData, MonsterData, MapData, Map);
+		if (Exit >= GameMode::Exit)
 		{
-			IsRunning = Exit;
+			IsRunning = false;
 		}
-		Render(PlayerData, Map, MapData);
+
+		Render(PlayerData, MonsterData, Map, MapData);
 	}
+
 	delete PlayerData;
+	PlayerData = nullptr;
 	delete MapData;
+	MapData = nullptr;
 	delete[] Map;
 	Map = nullptr;
 }
@@ -61,7 +82,7 @@ void ClearMap(std::string* Map, MapInfo* MapData)
 		std::string MapLine = "";
 		for (int X = 0; X < MapData->Width; X++)
 		{
-			if (X == 0 || Y == 0 || X == (MapData->Width - 1) || X == (MapData->Heigh - 1))
+			if (X == 0 || Y == 0 || X == (MapData->Width - 1) || Y == (MapData->Heigh - 1))
 			{
 				MapLine += "*";
 			}
@@ -74,11 +95,16 @@ void ClearMap(std::string* Map, MapInfo* MapData)
 	}
 }
 
-void Initialized(PlayerInfo* PlayerData, MapInfo* MapData, std::string** Map)
+void Initialized(CharacerInfo* PlayerData, CharacerInfo* MonsterData,MapInfo* MapData, std::string** Map)
 {
 	PlayerData->X = 5;
 	PlayerData->Y = 5;
 	PlayerData->Shape = 'P';
+
+	MonsterData->X = 7;
+	MonsterData->Y = 7;
+	MonsterData->Shape = 'M';
+
 
 	MapData->Heigh = 10;
 	MapData->Width = 10;
@@ -87,6 +113,7 @@ void Initialized(PlayerInfo* PlayerData, MapInfo* MapData, std::string** Map)
 	std::string* NewMap = new std::string[MapData->Width];
 	ClearMap(NewMap, MapData);
 	*Map = NewMap;
+	srand((unsigned int)time(NULL));
 }
 
 char Input()
@@ -100,19 +127,19 @@ char Input()
 	return var;
 }
 
-bool ChechDoMove(int X, int Y, std::string* Map)
+bool PredictMove(int X, int Y, std::string* Map)
 {
 	return (Map[Y][X] != '*');
 }
 
-bool Move(PlayerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX = 0, int MoveY = 0)
+bool Move(CharacerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX = 0, int MoveY = 0)
 {
 	int X = Player->X + MoveX;
 	int Y = Player->Y + MoveY;
 	if (X > MapData->Width - 1 || Y > MapData->Heigh - 1 || X < 0 || Y < 0)
 		return false;
 
-	if (ChechDoMove(X, Y, Map))
+	if (PredictMove(X, Y, Map))
 	{
 		Player->X = Player->X + MoveX;
 		Player->Y = Player->Y + MoveY;
@@ -120,39 +147,75 @@ bool Move(PlayerInfo* Player, MapInfo* MapData, std::string* Map, int MoveX = 0,
 	return true;
 }
 
-
-bool Tick(char Input, PlayerInfo* PlayerData, MapInfo* MapData, std::string* Map)
+void MonsterMove(CharacerInfo* MonsterData, MapInfo* MapData, std::string* Map, int MoveX = 0, int MoveY = 0)
 {
-	bool value = true;
-	switch (toupper(Input))
+	switch (((rand() % 4) + 1))
 	{
-	case 'W':
-		Move(PlayerData, MapData, Map, 0, -1);
+	case 1:
+		Move(MonsterData, MapData, Map, 0, -1);
 		break;
-	case 'A':
-		Move(PlayerData, MapData, Map, -1, 0);
+	case 2:
+		Move(MonsterData, MapData, Map, -1, 0);
 		break;
-	case 'S':
-		Move(PlayerData, MapData, Map, 0, 1);
+	case 3:
+		Move(MonsterData, MapData, Map, 0, 1);
 		break;
-	case 'D':
-		Move(PlayerData, MapData, Map, 1, 0);
-		break;
-	case 'P':
-		value = false;
+	case 4:
+		Move(MonsterData, MapData, Map, 1, 0);
 		break;
 	default:
 		break;
 	}
+}
+GameMode Tick(char Input, CharacerInfo* PlayerData, CharacerInfo* MonsterData, MapInfo* MapData, std::string* Map)
+{
+	GameMode value = GameMode::Do;
+
+	switch (toupper(Input))
+	{
+	case 'W':
+		Move(PlayerData, MapData, Map, 0, -1);
+		MonsterMove(MonsterData, MapData, Map, 0, -1);
+		break;
+	case 'A':
+		Move(PlayerData, MapData, Map, -1, 0);
+		MonsterMove(MonsterData, MapData, Map, -1, 0);
+		break;
+	case 'S':
+		Move(PlayerData, MapData, Map, 0, 1);
+		MonsterMove(MonsterData, MapData, Map, 0, 1);
+		break;
+	case 'D':
+		Move(PlayerData, MapData, Map, 1, 0);
+		MonsterMove(MonsterData, MapData, Map, 1, 0);
+		break;
+	case 'P':
+		value = GameMode::Exit;
+		break;
+	default:
+		break;
+	}
+
+
+	if (Map[PlayerData->Y][PlayerData->X] == 'G')
+	{
+		value = GameMode::Win;
+	}
+
 	return value;
 }
 
-void Render(PlayerInfo* PlayerData, std::string* Map, MapInfo* MapData)
+void Render(CharacerInfo* PlayerData, CharacerInfo* MonsterData, std::string* Map, MapInfo* MapData)
 {
+	//system("cls");
+
 	ClearMap(Map, MapData);
+	Map[MapData->Heigh - 2][MapData->Width - 2] = 'G';
+	Map[MonsterData->Y][MonsterData->X] = MonsterData->Shape;
 	Map[PlayerData->Y][PlayerData->X] = PlayerData->Shape;
 	for (int Y = 0; Y < MapData->Heigh; Y++)
 	{
+		GotoXY(0,Y);
 		std::cout << Map[Y] << std::endl;
 	}
 }
