@@ -30,25 +30,28 @@ void Render(PlayerInfo* PlayerDatas, std::string* Map, MapInfo* MapData);
 
 int main()
 {
-	PlayerInfo PlayerData;
-	MapInfo MapData;
+	PlayerInfo *PlayerData = new PlayerInfo();
+	MapInfo *MapData = new MapInfo();
 	std::string* Map = nullptr;
 	bool IsRunning = true;
 
-	Initialized(&PlayerData, &MapData, &Map);
+	Initialized(PlayerData, MapData, &Map);
 
 	while (IsRunning)
 	{
 		//system("cls");
 		char key = Input();
-		bool Exit = Tick(key, &PlayerData, &MapData, Map);
+		bool Exit = Tick(key, PlayerData, MapData, Map);
 		if (IsRunning != Exit)
 		{
 			IsRunning = Exit;
 		}
-		Render(&PlayerData, Map, &MapData);
+		Render(PlayerData, Map, MapData);
 	}
+	delete PlayerData;
+	delete MapData;
 	delete[] Map;
+	Map = nullptr;
 }
 
 void ClearMap(std::string* Map, MapInfo* MapData)
